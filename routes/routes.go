@@ -10,10 +10,9 @@ import (
 func RegisterInventoryRoutes(e *echo.Echo, inventoryController *controllers.InventoryController) {
 	inventoryManager := &manager.InventoryManager{}
 	inventoryController.InventoryManager = inventoryManager
-
-	e.POST("/inventory", inventoryController.CreateItemHandler)       
-	e.GET("/inventory", inventoryController.GetItemsHandler)         
-	e.GET("/inventory/:id", inventoryController.GetItemByIDHandler)  
-	e.PUT("/inventory/:id", inventoryController.UpdateItemHandler)   
+	e.POST("/inventory", inventoryController.CreateItemHandler)
+	e.GET("/inventory", inventoryController.GetItemsHandler)
+	e.GET("/inventory/:id", inventoryController.GetItemByIDHandler)
+	e.PUT("/inventory/:id", inventoryController.UpdateItemHandler)
 	e.DELETE("/inventory/:id", inventoryController.DeleteItemHandler)
 }

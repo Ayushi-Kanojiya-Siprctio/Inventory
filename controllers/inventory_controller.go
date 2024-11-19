@@ -46,7 +46,7 @@ func (c *InventoryController) CreateItemHandler(ctx echo.Context) error {
 
 	// Convert `primitive.ObjectID` to string for the response
 	response := responses.InventoryResponse{
-		ID:          createdItem.ID.Hex(),
+		ID:          createdItem.ID,
 		Name:        createdItem.Name,
 		Price:       createdItem.Price,
 		Currency:    createdItem.Currency,
@@ -107,7 +107,7 @@ func (c *InventoryController) GetItemsHandler(ctx echo.Context) error {
 	var itemResponses []responses.InventoryResponse
 	for _, item := range items {
 		itemResponses = append(itemResponses, responses.InventoryResponse{
-			ID:          item.ID.Hex(),
+			ID:          item.ID,
 			Name:        item.Name,
 			Price:       item.Price,
 			Currency:    item.Currency,
@@ -132,7 +132,7 @@ func (c *InventoryController) GetItemByIDHandler(ctx echo.Context) error {
 	}
 
 	return ctx.JSON(http.StatusOK, responses.InventoryResponse{
-		ID:          item.ID.Hex(),
+		ID:          item.ID,
 		Name:        item.Name,
 		Price:       item.Price,
 		Currency:    item.Currency,
@@ -164,7 +164,7 @@ func (c *InventoryController) UpdateItemHandler(ctx echo.Context) error {
 	}
 
 	return ctx.JSON(http.StatusOK, responses.InventoryResponse{
-		ID:          updatedItem.ID.Hex(),
+		ID:          updatedItem.ID,
 		Name:        updatedItem.Name,
 		Price:       updatedItem.Price,
 		Currency:    updatedItem.Currency,
