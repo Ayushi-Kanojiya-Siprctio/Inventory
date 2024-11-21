@@ -1,70 +1,107 @@
-package manager
+package managers
 
 import (
 	"context"
+	"errors"
+	"fmt"
+	"log"
 	"main/models"
 	service "main/services"
-
-	"log"
 
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 type InventoryManager struct{}
 
-func (m *InventoryManager) GetItems(ctx context.Context, pageNumber, pageSize int, vendors []string) ([]*models.Inventory, int64, error) {
-	items, totalCount, err := service.GetItems(ctx, pageNumber, pageSize, vendors)
-	if err != nil {
-		log.Printf("Error fetching inventory items: %v", err)
-		return nil, 0, err
+func (m *InventoryManager) GetItems(ctx context.Context, flag string, pageNumber, pageSize int, vendors []string) ([]*models.Inventory, int64, error) {
+	switch flag {
+	case "0":
+		items, totalCount, err := service.GetItems(ctx, pageNumber, pageSize, vendors)
+		if err != nil {
+			return nil, 0, err
+		}
+		return items, totalCount, nil
+
+	case "1":
+		items, totalCount, err := service.GetItemsPostgres(ctx, pageNumber, pageSize, vendors)
+		if err != nil {
+			return nil, 0, err
+		}
+		return items, totalCount, nil
+
+	default:
+		return nil, 0, errors.New("invalid flag type")
 	}
-	return items, totalCount, nil
 }
 
-func (m *InventoryManager) CreateItem(ctx context.Context, item *models.Inventory) (*models.Inventory, error) {
-	createdItem, err := service.CreateItem(ctx, item)
-	if err != nil {
-		log.Printf("Error creating inventory item: %v", err)
-		return nil, err
+func (m *InventoryManager) CreateItem(ctx context.Context, flag string, item *models.Inventory) (*models.Inventory, error) {
+	log.Println("flag--------->", flag)
+
+	switch flag {
+	case "0":
+		return service.CreateItem(ctx, item)
+
+	case "1":
+		return service.CreateItemPostgres(ctx, item)
+
+	default:
+		return nil, errors.New("invalid flag type")
 	}
-	return createdItem, nil
 }
 
-func (m *InventoryManager) GetItemByID(ctx context.Context, id string) (*models.Inventory, error) {
-	objectID, err := primitive.ObjectIDFromHex(id)
-	if err != nil {
-		log.Printf("Invalid inventory ID format: %v", err)
-		return nil, err
-	}
+func (m *InventoryManager) GetItemByID(ctx context.Context, flag string, id string) (*models.Inventory, error) {
+	switch flag {
+	case "0":
+		objectID, err := primitive.ObjectIDFromHex(id)
+		if err != nil {
+			return nil, err
+		}
+		return service.GetItemByID(ctx,objectID.Hex())
 
-	item, err := service.GetItemByID(ctx, objectID)
-	if err != nil {
-		log.Printf("Error fetching inventory item by ID: %v", err)
-		return nil, err
+	case "1":
+		return service.GetItemByIDPostgres(ctx, id)
+
+	default:
+		return nil, errors.New("invalid flag type")
 	}
-	return item, nil
+}
+func (m *InventoryManager) UpdateItem(ctx context.Context, flag string, id string, item *models.Inventory) (*models.Inventory, error) {
+    switch flag {
+    case "0": // MongoDB
+        // Call the service to update the item
+        updatedItem, err := service.UpdateItem(ctx, id, item)
+        if err != nil {
+            log.Printf("Error updating item in service: %v", err)
+            return nil, fmt.Errorf("failed to update item: %v", err)
+        }
+        return updatedItem, nil
+
+    case "1": // PostgreSQL or another database
+        return service.UpdateItemPostgres(ctx, id, item)
+
+    default:
+        return nil, errors.New("invalid flag type")
+    }
 }
 
-func (m *InventoryManager) UpdateItem(ctx context.Context, id string, item *models.Inventory) (*models.Inventory, error) {
-	updatedItem, err := service.UpdateItem(ctx, id, item)
-	if err != nil {
-		log.Printf("Error updating inventory item: %v", err)
-		return nil, err
-	}
-	return updatedItem, nil
+
+func (m *InventoryManager) DeleteItem(ctx context.Context, flag string, id string) error {
+    switch flag {
+    case "0":
+        // Convert string ID to ObjectID
+        objectID, err := primitive.ObjectIDFromHex(id)
+        if err != nil {
+            return err
+        }
+        
+        // Convert ObjectID to string before passing to service
+        return service.DeleteItem(ctx, objectID.Hex())
+
+    case "1":
+        return service.DeleteItemPostgres(ctx, id)
+
+    default:
+        return errors.New("invalid flag type")
+    }
 }
 
-func (m *InventoryManager) DeleteItem(ctx context.Context, id string) error {
-	objectID, err := primitive.ObjectIDFromHex(id)
-	if err != nil {
-		log.Printf("Invalid inventory ID format: %v", err)
-		return err
-	}
-
-	err = service.DeleteItem(ctx, objectID)
-	if err != nil {
-		log.Printf("Error deleting inventory item: %v", err)
-		return err
-	}
-	return nil
-}

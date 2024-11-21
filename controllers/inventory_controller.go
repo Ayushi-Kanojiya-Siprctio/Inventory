@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"fmt"
+	"log"
 	manager "main/managers"
 	"main/models"
 	"main/requests"
@@ -21,6 +22,9 @@ type InventoryController struct {
 }
 
 func (c *InventoryController) CreateItemHandler(ctx echo.Context) error {
+	flag := ctx.QueryParam("flag")
+	log.Println("flag--------->", flag)
+
 	var req requests.InventoryRequest
 	if err := ctx.Bind(&req); err != nil {
 		return ctx.JSON(http.StatusBadRequest, map[string]string{"message": "Invalid request"})
@@ -39,7 +43,7 @@ func (c *InventoryController) CreateItemHandler(ctx echo.Context) error {
 		Accessories: req.Accessories,
 	}
 
-	createdItem, err := c.InventoryManager.CreateItem(ctx.Request().Context(), item)
+	createdItem, err := c.InventoryManager.CreateItem(ctx.Request().Context(), flag, item)
 	if err != nil {
 		return ctx.JSON(http.StatusInternalServerError, map[string]string{"message": "Failed to create inventory item"})
 	}
@@ -56,8 +60,6 @@ func (c *InventoryController) CreateItemHandler(ctx echo.Context) error {
 
 	return ctx.JSON(http.StatusCreated, response)
 }
-
-
 func (c *InventoryController) GetItemsHandler(ctx echo.Context) error {
 	pageParam := ctx.QueryParam("page")
 	pageSizeParam := ctx.QueryParam("pageSize")
@@ -91,8 +93,9 @@ func (c *InventoryController) GetItemsHandler(ctx echo.Context) error {
 	if vendorParam != "" {
 		vendors = strings.Split(vendorParam, ",")
 	}
+	flag := ctx.QueryParam("flag")
 
-	items, totalCount, err := c.InventoryManager.GetItems(ctx.Request().Context(), page, pageSize, vendors)
+	items, totalCount, err := c.InventoryManager.GetItems(ctx.Request().Context(), flag, page, pageSize, vendors)
 	if err != nil {
 		return ctx.JSON(http.StatusBadRequest, map[string]string{"message": err.Error()})
 	}
@@ -124,8 +127,10 @@ func (c *InventoryController) GetItemsHandler(ctx echo.Context) error {
 }
 
 func (c *InventoryController) GetItemByIDHandler(ctx echo.Context) error {
+	flag := ctx.QueryParam("flag")
+
 	id := ctx.Param("id")
-	item, err := c.InventoryManager.GetItemByID(ctx.Request().Context(), id)
+	item, err := c.InventoryManager.GetItemByID(ctx.Request().Context(), flag, id)
 	if err != nil {
 		return ctx.JSON(http.StatusNotFound, map[string]string{"message": "Item not found"})
 	}
@@ -140,8 +145,9 @@ func (c *InventoryController) GetItemByIDHandler(ctx echo.Context) error {
 		Accessories: item.Accessories,
 	})
 }
-
 func (c *InventoryController) UpdateItemHandler(ctx echo.Context) error {
+	flag := ctx.QueryParam("flag")
+
 	id := ctx.Param("id")
 	var req requests.InventoryRequest
 	if err := ctx.Bind(&req); err != nil {
@@ -157,7 +163,7 @@ func (c *InventoryController) UpdateItemHandler(ctx echo.Context) error {
 		Accessories: req.Accessories,
 	}
 
-	updatedItem, err := c.InventoryManager.UpdateItem(ctx.Request().Context(), id, item)
+	updatedItem, err := c.InventoryManager.UpdateItem(ctx.Request().Context(), flag, id, item)
 	if err != nil {
 		return ctx.JSON(http.StatusInternalServerError, map[string]string{"message": "Failed to update item"})
 	}
@@ -174,8 +180,10 @@ func (c *InventoryController) UpdateItemHandler(ctx echo.Context) error {
 }
 
 func (c *InventoryController) DeleteItemHandler(ctx echo.Context) error {
+	flag := ctx.QueryParam("flag")
+
 	id := ctx.Param("id")
-	err := c.InventoryManager.DeleteItem(ctx.Request().Context(), id)
+	err := c.InventoryManager.DeleteItem(ctx.Request().Context(), id, flag)
 	if err != nil {
 		return ctx.JSON(http.StatusInternalServerError, map[string]string{"message": "Failed to delete item"})
 	}

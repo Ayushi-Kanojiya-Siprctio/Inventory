@@ -1,10 +1,12 @@
 package requests
 
+//gorm:"column:id;type:uuid;default:gen_random_uuid()"
+
 type InventoryRequest struct {
-	Name        string   `json:"product_name" bson:"product_name" validate:"required,max=20"`
-	Price       int      `json:"price" bson:"price" validate:"required,max=2000"`
-	Currency    string   `json:"currency" bson:"currency" validate:"required,len=3"`
-	Discount    int      `json:"discount" bson:"discount"`
-	Vendor      string   `json:"vendor" bson:"vendor" validate:"required"`
-	Accessories []string `json:"accessories,omitempty" bson:"accessories,omitempty"`
+	Name        string   `json:"product_name" binding:"required"`
+	Price       int      `json:"price" binding:"required"`
+	Currency    string   `json:"currency" binding:"required"`
+	Discount    int      `json:"discount" binding:"required"`
+	Vendor      string   `json:"vendor" binding:"required"`
+	Accessories []string `json:"accessories" binding:"required"`
 }
