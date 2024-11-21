@@ -12,8 +12,7 @@ type Inventory struct {
 	Currency    string   `gorm:"size:10" json:"currency"`
 	Discount    int      `gorm:"column:discount" json:"discount"`
 	Vendor      string   `gorm:"size:255" json:"vendor"`
-	Accessories []string `gorm:"type:text" json:"accessories"` // This stores an array of strings as JSON
-
+	Accessories []string `gorm:"type:text" json:"accessories"` 
 }
 
 func (i *Inventory) SetMongoDB() {

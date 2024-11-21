@@ -56,7 +56,7 @@ func (m *InventoryManager) GetItemByID(ctx context.Context, flag string, id stri
 		if err != nil {
 			return nil, err
 		}
-		return service.GetItemByID(ctx,objectID.Hex())
+		return service.GetItemByID(ctx, objectID.Hex())
 
 	case "1":
 		return service.GetItemByIDPostgres(ctx, id)
@@ -66,42 +66,38 @@ func (m *InventoryManager) GetItemByID(ctx context.Context, flag string, id stri
 	}
 }
 func (m *InventoryManager) UpdateItem(ctx context.Context, flag string, id string, item *models.Inventory) (*models.Inventory, error) {
-    switch flag {
-    case "0": // MongoDB
-        // Call the service to update the item
-        updatedItem, err := service.UpdateItem(ctx, id, item)
-        if err != nil {
-            log.Printf("Error updating item in service: %v", err)
-            return nil, fmt.Errorf("failed to update item: %v", err)
-        }
-        return updatedItem, nil
+	switch flag {
+	case "0":
+		updatedItem, err := service.UpdateItem(ctx, id, item)
+		if err != nil {
+			log.Printf("Error updating item in service: %v", err)
+			return nil, fmt.Errorf("failed to update item: %v", err)
+		}
+		return updatedItem, nil
 
-    case "1": // PostgreSQL or another database
-        return service.UpdateItemPostgres(ctx, id, item)
+	case "1":
+		return service.UpdateItemPostgres(ctx, id, item)
 
-    default:
-        return nil, errors.New("invalid flag type")
-    }
+	default:
+		return nil, errors.New("invalid flag type")
+	}
 }
-
 
 func (m *InventoryManager) DeleteItem(ctx context.Context, flag string, id string) error {
-    switch flag {
-    case "0":
-        // Convert string ID to ObjectID
-        objectID, err := primitive.ObjectIDFromHex(id)
-        if err != nil {
-            return err
-        }
-        
-        // Convert ObjectID to string before passing to service
-        return service.DeleteItem(ctx, objectID.Hex())
+	switch flag {
+	case "0":
 
-    case "1":
-        return service.DeleteItemPostgres(ctx, id)
+		objectID, err := primitive.ObjectIDFromHex(id)
+		if err != nil {
+			return err
+		}
 
-    default:
-        return errors.New("invalid flag type")
-    }
+		return service.DeleteItem(ctx, objectID.Hex())
+
+	case "1":
+		return service.DeleteItemPostgres(ctx, id)
+
+	default:
+		return errors.New("invalid flag type")
+	}
 }
-
