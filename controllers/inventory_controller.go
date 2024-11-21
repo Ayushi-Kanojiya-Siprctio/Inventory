@@ -44,7 +44,6 @@ func (c *InventoryController) CreateItemHandler(ctx echo.Context) error {
 		return ctx.JSON(http.StatusInternalServerError, map[string]string{"message": "Failed to create inventory item"})
 	}
 
-	// Convert `primitive.ObjectID` to string for the response
 	response := responses.InventoryResponse{
 		ID:          createdItem.ID,
 		Name:        createdItem.Name,

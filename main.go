@@ -5,13 +5,16 @@ import (
 	"main/config"
 	"main/controllers"
 	"main/routes"
-	_ "github.com/lib/pq" 
+	service "main/services"
+
 	"github.com/go-playground/validator/v10"
 	"github.com/labstack/echo/v4"
+	_ "github.com/lib/pq"
 )
 
 func main() {
-	config.PostgresConnect()
+	service.DB = config.PostgresDB
+	//config.ConnectPostgres()
 	config.InitMongoDB()
 	e := echo.New()
 	inventoryController := &controllers.InventoryController{

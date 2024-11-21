@@ -1,14 +1,15 @@
 package models
 
-import "go.mongodb.org/mongo-driver/bson/primitive"
-
+import (
+	"go.mongodb.org/mongo-driver/bson/primitive"
+)
 
 type Inventory struct {
-	ID          primitive.ObjectID `json:"_id,omitempty" bson:"_id,omitempty"`
-	Name        string             `json:"product_name" bson:"product_name" validate:"required,max=20"`
-	Price       int                `json:"price" bson:"price" validate:"required,max=2000"`
-	Currency    string             `json:"currency" bson:"currency" validate:"required,len=3"`
-	Discount    int                `json:"discount" bson:"discount"`
-	Vendor      string             `json:"vendor" bson:"vendor" validate:"required"`
-	Accessories []string           `json:"accessories,omitempty" bson:"accessories,omitempty"`
+	ID          primitive.ObjectID `bson:"_id,omitempty" gorm:"primaryKey"`
+	Name        string             `bson:"product_name" gorm:"size:255"`
+	Price       int                `bson:"price"`
+	Currency    string             `bson:"currency" gorm:"size:10"`
+	Discount    int                `bson:"discount"`
+	Vendor      string             `bson:"vendor" gorm:"size:255"`
+	Accessories []string           `bson:"accessories" gorm:"-"`
 }
