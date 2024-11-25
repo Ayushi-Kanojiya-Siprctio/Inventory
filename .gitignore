@@ -1,1 +1,3 @@
 nsqd/data/nsqd.dat
+.env
+.env.example
