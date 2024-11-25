@@ -8,5 +8,4 @@ type InventoryRequest struct {
 	Currency    string   `json:"currency" binding:"required"`
 	Discount    int      `json:"discount" binding:"required"`
 	Vendor      string   `json:"vendor" binding:"required"`
-	Accessories []string `json:"accessories" binding:"required"`
 }

@@ -13,17 +13,18 @@ import (
 
 type InventoryManager struct{}
 
-func (m *InventoryManager) GetItems(ctx context.Context, flag string, pageNumber, pageSize int, vendors []string) ([]*models.Inventory, int64, error) {
+func (m *InventoryManager) GetItems(ctx context.Context, flag bool) ([]*models.Inventory, int64, error) {
+
 	switch flag {
-	case "0":
-		items, totalCount, err := service.GetItems(ctx, pageNumber, pageSize, vendors)
+	case true:
+		items, totalCount, err := service.GetItems(ctx)
 		if err != nil {
 			return nil, 0, err
 		}
 		return items, totalCount, nil
 
-	case "1":
-		items, totalCount, err := service.GetItemsPostgres(ctx, pageNumber, pageSize, vendors)
+	case false:
+		items, totalCount, err := service.GetItemsPostgres(ctx)
 		if err != nil {
 			return nil, 0, err
 		}
@@ -34,14 +35,14 @@ func (m *InventoryManager) GetItems(ctx context.Context, flag string, pageNumber
 	}
 }
 
-func (m *InventoryManager) CreateItem(ctx context.Context, flag string, item *models.Inventory) (*models.Inventory, error) {
+func (m *InventoryManager) CreateItem(ctx context.Context, flag bool, item *models.Inventory) (*models.Inventory, error) {
 	log.Println("flag--------->", flag)
 
 	switch flag {
-	case "0":
+	case true:
 		return service.CreateItem(ctx, item)
 
-	case "1":
+	case false:
 		return service.CreateItemPostgres(ctx, item)
 
 	default:
@@ -49,33 +50,34 @@ func (m *InventoryManager) CreateItem(ctx context.Context, flag string, item *mo
 	}
 }
 
-func (m *InventoryManager) GetItemByID(ctx context.Context, flag string, id string) (*models.Inventory, error) {
+func (m *InventoryManager) GetItemByID(ctx context.Context, flag bool, id string) (*models.Inventory, error) {
 	switch flag {
-	case "0":
+	case true:
 		objectID, err := primitive.ObjectIDFromHex(id)
 		if err != nil {
 			return nil, err
 		}
 		return service.GetItemByID(ctx, objectID.Hex())
 
-	case "1":
+	case false:
 		return service.GetItemByIDPostgres(ctx, id)
 
 	default:
 		return nil, errors.New("invalid flag type")
 	}
 }
-func (m *InventoryManager) UpdateItem(ctx context.Context, flag string, id string, item *models.Inventory) (*models.Inventory, error) {
+func (m *InventoryManager) UpdateItem(ctx context.Context, flag bool, id string, item *models.Inventory) (*models.Inventory, error) {
 	switch flag {
-	case "0":
-		updatedItem, err := service.UpdateItem(ctx, id, item)
+	case true:
+		objectID,err:= primitive.ObjectIDFromHex(id)
+		updatedItem, err := service.UpdateItem(ctx, objectID, item)
 		if err != nil {
 			log.Printf("Error updating item in service: %v", err)
 			return nil, fmt.Errorf("failed to update item: %v", err)
 		}
 		return updatedItem, nil
 
-	case "1":
+	case false:
 		return service.UpdateItemPostgres(ctx, id, item)
 
 	default:
@@ -83,9 +85,9 @@ func (m *InventoryManager) UpdateItem(ctx context.Context, flag string, id strin
 	}
 }
 
-func (m *InventoryManager) DeleteItem(ctx context.Context, flag string, id string) error {
+func (m *InventoryManager) DeleteItem(ctx context.Context, flag bool, id string) error {
 	switch flag {
-	case "0":
+	case true:
 
 		objectID, err := primitive.ObjectIDFromHex(id)
 		if err != nil {
@@ -94,7 +96,7 @@ func (m *InventoryManager) DeleteItem(ctx context.Context, flag string, id strin
 
 		return service.DeleteItem(ctx, objectID.Hex())
 
-	case "1":
+	case false:
 		return service.DeleteItemPostgres(ctx, id)
 
 	default:

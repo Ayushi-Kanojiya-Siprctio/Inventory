@@ -20,8 +20,7 @@ func CreateTableIfNotExists(db *gorm.DB) error {
 		"price" bigint,
 		"currency" varchar(10),
 		"discount" bigint,
-		"vendor" varchar(255),
-		"accessories" jsonb
+		"vendor" varchar(255)
 	);
 	`
 
@@ -35,8 +34,30 @@ func CreateTableIfNotExists(db *gorm.DB) error {
 	return nil
 }
 
+// func CreateItemPostgres(ctx context.Context, item *models.Inventory) (*models.Inventory, error) {
+// 	log.Println("postgres create service--------->")
+// 	log.Println("PG-------->", config.PG)
+
+// 	if config.PG == nil {
+// 		log.Println("Error: PostgreSQL database connection is not initialized.")
+// 		return nil, errors.New("PostgreSQL database connection is not initialized")
+// 	}
+
+// 	query := `INSERT INTO inventories (product_name, price, currency, discount, vendor)
+// 				VALUES (?, ?, ?, ?, ?) RETURNING id`
+// 	err := config.PG.Raw(query, item.Name, item.Price, item.Currency, item.Discount, item.Vendor).Scan(&item.ID).Error
+// 	if err != nil {
+// 		log.Println("Error inserting item:", err)
+// 		return nil, fmt.Errorf("error inserting item: %w", err)
+// 	}
+
+// 	log.Println("Item created successfully:", item)
+// 	return item, nil
+// }
+
+
 func CreateItemPostgres(ctx context.Context, item *models.Inventory) (*models.Inventory, error) {
-	log.Println("postgres create service--------->")
+	log.Println("Postgres create service--------->")
 	log.Println("PG-------->", config.PG)
 
 	if config.PG == nil {
@@ -44,9 +65,11 @@ func CreateItemPostgres(ctx context.Context, item *models.Inventory) (*models.In
 		return nil, errors.New("PostgreSQL database connection is not initialized")
 	}
 
-	query := `INSERT INTO inventories (product_name, price, currency, discount, vendor, accessories)
-				VALUES (?, ?, ?, ?, ?, ?) RETURNING id`
-	err := config.PG.Raw(query, item.Name, item.Price, item.Currency, item.Discount, item.Vendor, item.Accessories).Scan(&item.ID).Error
+	query := `INSERT INTO inventories (product_name, price, currency, discount, vendor)
+				VALUES (?, ?, ?, ?, ?)
+				RETURNING id, product_name, price, currency, discount, vendor`
+	err := config.PG.Raw(query, item.Name, item.Price, item.Currency, item.Discount, item.Vendor).
+		Scan(item).Error
 	if err != nil {
 		log.Println("Error inserting item:", err)
 		return nil, fmt.Errorf("error inserting item: %w", err)
@@ -56,7 +79,8 @@ func CreateItemPostgres(ctx context.Context, item *models.Inventory) (*models.In
 	return item, nil
 }
 
-func GetItemsPostgres(ctx context.Context, pageNumber, pageSize int, vendors []string) ([]*models.Inventory, int64, error) {
+
+func GetItemsPostgres(ctx context.Context) ([]*models.Inventory, int64, error) {
 	var items []*models.Inventory
 	var totalCount int64
 
@@ -65,25 +89,23 @@ func GetItemsPostgres(ctx context.Context, pageNumber, pageSize int, vendors []s
 		return nil, 0, errors.New("PostgreSQL database connection is not initialized")
 	}
 
-	query := config.PG.WithContext(ctx).Model(&models.Inventory{})
-	if len(vendors) > 0 {
-		query = query.Where("vendor IN ?", vendors)
-	}
-
-	if err := query.Count(&totalCount).Error; err != nil {
-		log.Printf("Error counting inventory items in PostgreSQL: %v", err)
-		return nil, 0, err
-	}
-
-	offset := (pageNumber - 1) * pageSize
-	if err := query.Offset(offset).Limit(pageSize).Find(&items).Error; err != nil {
+	query := `SELECT id, product_name, price, currency, discount, vendor FROM inventories`
+	err := config.PG.Raw(query).Scan(&items).Error
+	if err != nil {
 		log.Printf("Error fetching inventory items from PostgreSQL: %v", err)
 		return nil, 0, err
 	}
 
-	log.Println("Items fetched successfully:", items)
+	countQuery := `SELECT COUNT(*) FROM inventories`
+	err = config.PG.Raw(countQuery).Scan(&totalCount).Error
+	if err != nil {
+		log.Printf("Error counting inventory items in PostgreSQL: %v", err)
+		return nil, 0, err
+	}
+
 	return items, totalCount, nil
 }
+
 
 func GetItemByIDPostgres(ctx context.Context, id string) (*models.Inventory, error) {
 	var item models.Inventory
@@ -113,8 +135,8 @@ func UpdateItemPostgres(ctx context.Context, id string, item *models.Inventory) 
 		return nil, errors.New("PostgreSQL database connection is not initialized")
 	}
 
-	query := `UPDATE inventories SET product_name = ?, price = ?, currency = ?, discount = ?, vendor = ?, accessories = ? WHERE id = ?`
-	err := config.PG.Exec(query, item.Name, item.Price, item.Currency, item.Discount, item.Vendor, item.Accessories, id).Error
+	query := `UPDATE inventories SET product_name = ?, price = ?, currency = ?, discount = ?, vendor = ? WHERE id = ?`
+	err := config.PG.Exec(query, item.Name, item.Price, item.Currency, item.Discount, item.Vendor, id).Error
 	if err != nil {
 		log.Printf("Error updating inventory item in PostgreSQL: %v", err)
 		return nil, fmt.Errorf("error updating item: %w", err)

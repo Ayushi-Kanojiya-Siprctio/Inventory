@@ -1,7 +1,6 @@
 package controllers
 
 import (
-	"fmt"
 	"log"
 	manager "main/managers"
 	"main/models"
@@ -10,7 +9,6 @@ import (
 
 	"net/http"
 	"strconv"
-	"strings"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/labstack/echo/v4"
@@ -21,8 +19,16 @@ type InventoryController struct {
 	InventoryManager *manager.InventoryManager
 }
 
+func parseFlag(flag string) (bool, error) {
+	if flag == "" {
+		return false, nil // Default value
+	}
+	return strconv.ParseBool(flag)
+}
+
 func (c *InventoryController) CreateItemHandler(ctx echo.Context) error {
-	flag := ctx.QueryParam("flag")
+	flagStr := ctx.QueryParam("flag")
+	flag, err := parseFlag(flagStr)
 	log.Println("flag--------->", flag)
 
 	var req requests.InventoryRequest
@@ -35,12 +41,11 @@ func (c *InventoryController) CreateItemHandler(ctx echo.Context) error {
 	}
 
 	item := &models.Inventory{
-		Name:        req.Name,
-		Price:       req.Price,
-		Currency:    req.Currency,
-		Discount:    req.Discount,
-		Vendor:      req.Vendor,
-		Accessories: req.Accessories,
+		Name:     req.Name,
+		Price:    req.Price,
+		Currency: req.Currency,
+		Discount: req.Discount,
+		Vendor:   req.Vendor,
 	}
 
 	createdItem, err := c.InventoryManager.CreateItem(ctx.Request().Context(), flag, item)
@@ -49,63 +54,38 @@ func (c *InventoryController) CreateItemHandler(ctx echo.Context) error {
 	}
 
 	response := responses.InventoryResponse{
-		ID:          createdItem.ID,
-		Name:        createdItem.Name,
-		Price:       createdItem.Price,
-		Currency:    createdItem.Currency,
-		Discount:    createdItem.Discount,
-		Vendor:      createdItem.Vendor,
-		Accessories: createdItem.Accessories,
+		ID:       createdItem.ID,
+		Name:     createdItem.Name,
+		Price:    createdItem.Price,
+		Currency: createdItem.Currency,
+		Discount: createdItem.Discount,
+		Vendor:   createdItem.Vendor,
 	}
 
 	return ctx.JSON(http.StatusCreated, response)
 }
 func (c *InventoryController) GetItemsHandler(ctx echo.Context) error {
-	pageParam := ctx.QueryParam("page")
-	pageSizeParam := ctx.QueryParam("pageSize")
-	vendorParam := ctx.QueryParam("vendor")
-
-	page := 1
-	pageSize := 100
-
-	if pageParam != "" {
-		var err error
-		page, err = strconv.Atoi(pageParam)
-		if err != nil || page < 0 {
-			return ctx.JSON(http.StatusBadRequest, map[string]string{"message": "'page' must be a positive integer"})
-		}
-	}
-
-	if pageSizeParam != "" {
-		var err error
-		pageSize, err = strconv.Atoi(pageSizeParam)
-		if err != nil || pageSize <= -2 {
-			return ctx.JSON(http.StatusBadRequest, map[string]string{"message": "'pageSize' must be a positive integer"})
-		}
-	}
-
-	if pageSize == -1 {
-		page = 1
-		pageSize = 100
-	}
-
-	var vendors []string
-	if vendorParam != "" {
-		vendors = strings.Split(vendorParam, ",")
-	}
-	flag := ctx.QueryParam("flag")
-
-	items, totalCount, err := c.InventoryManager.GetItems(ctx.Request().Context(), flag, page, pageSize, vendors)
+	// Extract the flag parameter
+	flagStr := ctx.QueryParam("flag")
+	flag, err := parseFlag(flagStr) // Assuming parseFlag is a function that converts the flag string to a boolean
 	if err != nil {
 		return ctx.JSON(http.StatusBadRequest, map[string]string{"message": err.Error()})
 	}
 
+	// Fetch the items and totalCount based on the flag, no pagination and no vendor filtering
+	items, totalCount, err := c.InventoryManager.GetItems(ctx.Request().Context(), flag) // Pass no vendor list
+	if err != nil {
+		return ctx.JSON(http.StatusBadRequest, map[string]string{"message": err.Error()})
+	}
+
+	// If no items are found
 	if len(items) == 0 {
 		return ctx.JSON(http.StatusNotFound, map[string]string{
-			"message": fmt.Sprintf("No record found with these vendors: %s", vendorParam),
+			"message": "No items found",
 		})
 	}
 
+	// Prepare the response
 	var itemResponses []responses.InventoryResponse
 	for _, item := range items {
 		itemResponses = append(itemResponses, responses.InventoryResponse{
@@ -115,20 +95,19 @@ func (c *InventoryController) GetItemsHandler(ctx echo.Context) error {
 			Currency:    item.Currency,
 			Discount:    item.Discount,
 			Vendor:      item.Vendor,
-			Accessories: item.Accessories,
 		})
 	}
 
+	// Return the response with the fetched items
 	return ctx.JSON(http.StatusOK, map[string]interface{}{
 		"items":        itemResponses,
 		"totalRecords": totalCount,
-		"currentPage":  page,
 	})
 }
 
 func (c *InventoryController) GetItemByIDHandler(ctx echo.Context) error {
-	flag := ctx.QueryParam("flag")
-
+	flagStr := ctx.QueryParam("flag")
+	flag, err := parseFlag(flagStr)
 	id := ctx.Param("id")
 	item, err := c.InventoryManager.GetItemByID(ctx.Request().Context(), flag, id)
 	if err != nil {
@@ -136,18 +115,17 @@ func (c *InventoryController) GetItemByIDHandler(ctx echo.Context) error {
 	}
 
 	return ctx.JSON(http.StatusOK, responses.InventoryResponse{
-		ID:          item.ID,
-		Name:        item.Name,
-		Price:       item.Price,
-		Currency:    item.Currency,
-		Discount:    item.Discount,
-		Vendor:      item.Vendor,
-		Accessories: item.Accessories,
+		ID:       item.ID,
+		Name:     item.Name,
+		Price:    item.Price,
+		Currency: item.Currency,
+		Discount: item.Discount,
+		Vendor:   item.Vendor,
 	})
 }
 func (c *InventoryController) UpdateItemHandler(ctx echo.Context) error {
-	flag := ctx.QueryParam("flag")
-
+	flagStr := ctx.QueryParam("flag")
+	flag, err := parseFlag(flagStr)
 	id := ctx.Param("id")
 	var req requests.InventoryRequest
 	if err := ctx.Bind(&req); err != nil {
@@ -155,12 +133,11 @@ func (c *InventoryController) UpdateItemHandler(ctx echo.Context) error {
 	}
 
 	item := &models.Inventory{
-		Name:        req.Name,
-		Price:       req.Price,
-		Currency:    req.Currency,
-		Discount:    req.Discount,
-		Vendor:      req.Vendor,
-		Accessories: req.Accessories,
+		Name:     req.Name,
+		Price:    req.Price,
+		Currency: req.Currency,
+		Discount: req.Discount,
+		Vendor:   req.Vendor,
 	}
 
 	updatedItem, err := c.InventoryManager.UpdateItem(ctx.Request().Context(), flag, id, item)
@@ -169,24 +146,44 @@ func (c *InventoryController) UpdateItemHandler(ctx echo.Context) error {
 	}
 
 	return ctx.JSON(http.StatusOK, responses.InventoryResponse{
-		ID:          updatedItem.ID,
-		Name:        updatedItem.Name,
-		Price:       updatedItem.Price,
-		Currency:    updatedItem.Currency,
-		Discount:    updatedItem.Discount,
-		Vendor:      updatedItem.Vendor,
-		Accessories: updatedItem.Accessories,
+		ID:       updatedItem.ID,
+		Name:     updatedItem.Name,
+		Price:    updatedItem.Price,
+		Currency: updatedItem.Currency,
+		Discount: updatedItem.Discount,
+		Vendor:   updatedItem.Vendor,
 	})
 }
-
 func (c *InventoryController) DeleteItemHandler(ctx echo.Context) error {
-	flag := ctx.QueryParam("flag")
-
-	id := ctx.Param("id")
-	err := c.InventoryManager.DeleteItem(ctx.Request().Context(), id, flag)
+	// Retrieve the 'flag' query parameter and convert it to bool
+	flagStr := ctx.QueryParam("flag")
+	flag, err := parseFlag(flagStr)
 	if err != nil {
+		return ctx.JSON(http.StatusBadRequest, map[string]string{"message": "Invalid flag value"})
+	}
+
+	// Retrieve the 'id' parameter (this remains a string)
+	id := ctx.Param("id")
+
+	// Call the InventoryManager's DeleteItem method
+	err = c.InventoryManager.DeleteItem(ctx.Request().Context(), flag, id)
+	if err != nil {
+		// Handle error from DeleteItem method (e.g., item not found)
 		return ctx.JSON(http.StatusInternalServerError, map[string]string{"message": "Failed to delete item"})
 	}
 
+	// Return a success response
 	return ctx.JSON(http.StatusOK, map[string]string{"message": "Item deleted successfully"})
 }
+
+// func (c *InventoryController) DeleteItemHandler(ctx echo.Context) error {
+
+// 	id := ctx.Param("id")
+
+// 	err := c.InventoryManager.DeleteItem(ctx.Request().Context(), id, flag)
+// 	if err != nil {
+// 		return ctx.JSON(http.StatusInternalServerError, map[string]string{"message": "Failed to delete item"})
+// 	}
+
+// 	return ctx.JSON(http.StatusOK, map[string]string{"message": "Item deleted successfully"})
+// }

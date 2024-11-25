@@ -8,5 +8,4 @@ type InventoryResponse struct {
 	Currency    string   `json:"currency"`
 	Discount    int      `json:"discount"`
 	Vendor      string   `json:"vendor"`
-	Accessories []string `json:"accessories"`
 }
