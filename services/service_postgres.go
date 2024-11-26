@@ -34,28 +34,6 @@ func CreateTableIfNotExists(db *gorm.DB) error {
 	return nil
 }
 
-// func CreateItemPostgres(ctx context.Context, item *models.Inventory) (*models.Inventory, error) {
-// 	log.Println("postgres create service--------->")
-// 	log.Println("PG-------->", config.PG)
-
-// 	if config.PG == nil {
-// 		log.Println("Error: PostgreSQL database connection is not initialized.")
-// 		return nil, errors.New("PostgreSQL database connection is not initialized")
-// 	}
-
-// 	query := `INSERT INTO inventories (product_name, price, currency, discount, vendor)
-// 				VALUES (?, ?, ?, ?, ?) RETURNING id`
-// 	err := config.PG.Raw(query, item.Name, item.Price, item.Currency, item.Discount, item.Vendor).Scan(&item.ID).Error
-// 	if err != nil {
-// 		log.Println("Error inserting item:", err)
-// 		return nil, fmt.Errorf("error inserting item: %w", err)
-// 	}
-
-// 	log.Println("Item created successfully:", item)
-// 	return item, nil
-// }
-
-
 func CreateItemPostgres(ctx context.Context, item *models.Inventory) (*models.Inventory, error) {
 	log.Println("Postgres create service--------->")
 	log.Println("PG-------->", config.PG)
@@ -64,6 +42,7 @@ func CreateItemPostgres(ctx context.Context, item *models.Inventory) (*models.In
 		log.Println("Error: PostgreSQL database connection is not initialized.")
 		return nil, errors.New("PostgreSQL database connection is not initialized")
 	}
+	log.Println("item-------->", item.Name)
 
 	query := `INSERT INTO inventories (product_name, price, currency, discount, vendor)
 				VALUES (?, ?, ?, ?, ?)
@@ -78,7 +57,6 @@ func CreateItemPostgres(ctx context.Context, item *models.Inventory) (*models.In
 	log.Println("Item created successfully:", item)
 	return item, nil
 }
-
 
 func GetItemsPostgres(ctx context.Context) ([]*models.Inventory, int64, error) {
 	var items []*models.Inventory
@@ -105,7 +83,6 @@ func GetItemsPostgres(ctx context.Context) ([]*models.Inventory, int64, error) {
 
 	return items, totalCount, nil
 }
-
 
 func GetItemByIDPostgres(ctx context.Context, id string) (*models.Inventory, error) {
 	var item models.Inventory

@@ -6,12 +6,12 @@ import (
 )
 
 type Inventory struct {
-	ID          string   `gorm:"column:id;type:uuid;default:gen_random_uuid();primaryKey" json:"id"`
-	Name        string   `gorm:"size:255" json:"product_name"`
-	Price       int      `gorm:"column:price" json:"price"`
-	Currency    string   `gorm:"size:10" json:"currency"`
-	Discount    int      `gorm:"column:discount" json:"discount"`
-	Vendor      string   `gorm:"size:255" json:"vendor"`
+	ID       string `gorm:"column:id;type:uuid;default:gen_random_uuid();primaryKey" json:"id"`
+	Name     string `gorm:"size:255;column:product_name" json:"product_name"`
+	Price    int    `gorm:"column:price" json:"price"`
+	Currency string `gorm:"size:10" json:"currency"`
+	Discount int    `gorm:"column:discount" json:"discount"`
+	Vendor   string `gorm:"size:255" json:"vendor"`
 }
 
 func (i *Inventory) SetMongoDB() {
@@ -25,3 +25,5 @@ func (i *Inventory) GenerateUUID() {
 		i.ID = uuid.New().String()
 	}
 }
+
+

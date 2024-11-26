@@ -9,13 +9,14 @@ import (
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo"
 )
 
 func CreateItem(ctx context.Context, item *models.Inventory) (*models.Inventory, error) {
 	log.Println("mongo create service--------->")
 
-	item.SetMongoDB()
-	item.GenerateUUID()
+	// item.SetMongoDB()
+	// item.GenerateUUID()
 
 	result, err := config.InventoryCollection.InsertOne(ctx, item)
 	if err != nil {
@@ -44,7 +45,6 @@ func GetItems(ctx context.Context) ([]*models.Inventory, int64, error) {
 		return nil, 0, err
 	}
 
-	
 	totalCount, err = config.InventoryCollection.CountDocuments(ctx, bson.D{})
 	if err != nil {
 		return nil, 0, err
@@ -55,9 +55,15 @@ func GetItems(ctx context.Context) ([]*models.Inventory, int64, error) {
 
 func GetItemByID(ctx context.Context, id string) (*models.Inventory, error) {
 	var item models.Inventory
-	err := config.InventoryCollection.FindOne(ctx, bson.M{"_id": id}).Decode(&item)
+
+	objectID, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
-		if err.Error() == "mongo: no documents in result" {
+		return nil, err
+	}
+
+	err = config.InventoryCollection.FindOne(ctx, bson.M{"_id": objectID}).Decode(&item)
+	if err != nil {
+		if err == mongo.ErrNoDocuments {
 			return nil, errors.New("inventory item not found")
 		}
 		log.Printf("Error fetching inventory item by ID: %v", err)
@@ -66,6 +72,7 @@ func GetItemByID(ctx context.Context, id string) (*models.Inventory, error) {
 
 	return &item, nil
 }
+
 func UpdateItem(ctx context.Context, id primitive.ObjectID, item *models.Inventory) (*models.Inventory, error) {
 	update := bson.M{"$set": item}
 

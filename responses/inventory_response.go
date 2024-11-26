@@ -2,7 +2,7 @@ package responses
 
 
 type InventoryResponse struct {
-	ID          string   `json:"id"`
+	// ID          string   `json:"id" bson:"_id"`
 	Name        string   `json:"product_name"`
 	Price       int      `json:"price"`
 	Currency    string   `json:"currency"`
