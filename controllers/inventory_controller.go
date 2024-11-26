@@ -104,23 +104,19 @@ func (c *InventoryController) GetItemsHandler(ctx echo.Context) error {
 }
 
 func (c *InventoryController) GetItemByIDHandler(ctx echo.Context) error {
-	// Parse flag query parameter
 	flagStr := ctx.QueryParam("flag")
 	flag, err := parseFlag(flagStr)
 	if err != nil {
 		return ctx.JSON(http.StatusBadRequest, map[string]string{"message": "Invalid flag"})
 	}
 
-	// Get item ID from URL parameter
 	id := ctx.Param("id")
 
-	// Get item by ID from the manager layer
 	item, err := c.InventoryManager.GetItemByID(ctx.Request().Context(), flag, id)
 	if err != nil {
 		return ctx.JSON(http.StatusNotFound, map[string]string{"message": "Item not found"})
 	}
 
-	// Format response
 	return ctx.JSON(http.StatusOK, responses.InventoryResponse{
 		// ID:       item.ID,
 		Name:     item.Name,
