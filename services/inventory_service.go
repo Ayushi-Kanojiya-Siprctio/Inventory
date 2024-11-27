@@ -13,19 +13,13 @@ import (
 )
 
 func CreateItem(ctx context.Context, item *models.Inventory) (*models.Inventory, error) {
-	// item.SetMongoDB()
-	// item.GenerateUUID()
-
-	result, err := config.InventoryCollection.InsertOne(ctx, item)
+	item.SetMongoDB()
+	_, err := config.InventoryCollection.InsertOne(ctx, item)
 	if err != nil {
 		log.Printf("Error inserting inventory item: %v", err)
 		return nil, err
 	}
 
-	objectID, ok := result.InsertedID.(primitive.ObjectID)
-	if ok {
-		item.ID = objectID.Hex()
-	}
 	return item, nil
 }
 
@@ -54,12 +48,12 @@ func GetItems(ctx context.Context) ([]*models.Inventory, int64, error) {
 func GetItemByID(ctx context.Context, id string) (*models.Inventory, error) {
 	var item models.Inventory
 
-	objectID, err := primitive.ObjectIDFromHex(id)
-	if err != nil {
-		return nil, err
-	}
+	// objectID, err := primitive.ObjectIDFromHex(id)
+	// if err != nil {
+	// 	return nil, err
+	// }
 
-	err = config.InventoryCollection.FindOne(ctx, bson.M{"_id": objectID}).Decode(&item)
+	err := config.InventoryCollection.FindOne(ctx, bson.M{"_id": id}).Decode(&item)
 	if err != nil {
 		if err == mongo.ErrNoDocuments {
 			return nil, errors.New("inventory item not found")
@@ -89,13 +83,13 @@ func UpdateItem(ctx context.Context, id primitive.ObjectID, item *models.Invento
 }
 
 func DeleteItem(ctx context.Context, id string) error {
-	objectID, err := primitive.ObjectIDFromHex(id)
-	if err != nil {
-		log.Printf("Invalid ID format: %v", err)
-		return err
-	}
+	// objectID, err := primitive.ObjectIDFromHex(id)
+	// if err != nil {
+	// 	log.Printf("Invalid ID format: %v", err)
+	// 	return err
+	// }
 
-	result, err := config.InventoryCollection.DeleteOne(ctx, bson.M{"_id": objectID})
+	result, err := config.InventoryCollection.DeleteOne(ctx, bson.M{"_id": id})
 	if err != nil {
 		log.Printf("Error deleting inventory item: %v", err)
 		return err
