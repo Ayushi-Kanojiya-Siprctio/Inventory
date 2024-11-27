@@ -1,11 +1,12 @@
 package controllers
 
 import (
-	"log"
+	"errors"
 	manager "main/managers"
 	"main/models"
 	"main/requests"
 	"main/responses"
+	"strings"
 
 	"net/http"
 	"strconv"
@@ -23,21 +24,37 @@ func parseFlag(flag string) (bool, error) {
 	if flag == "" {
 		return false, nil
 	}
+	flag = strings.ToLower(flag)
+	if flag != "true" && flag != "false" {
+		return false, errors.New("flag must be 'true' or 'false'")
+	}
+
 	return strconv.ParseBool(flag)
 }
 
 func (c *InventoryController) CreateItemHandler(ctx echo.Context) error {
 	flagStr := ctx.QueryParam("flag")
 	flag, err := parseFlag(flagStr)
-	log.Println("flag--------->", flag)
+
+	if err != nil {
+		return ctx.JSON(http.StatusBadRequest, map[string]string{"error": err.Error()})
+	}
 
 	var req requests.InventoryRequest
 	if err := ctx.Bind(&req); err != nil {
-		return ctx.JSON(http.StatusBadRequest, map[string]string{"message": "Invalid request"})
+		return ctx.JSON(http.StatusBadRequest, map[string]string{"message": "Invalid request format"})
 	}
 
 	if err := c.Validate.Struct(req); err != nil {
-		return ctx.JSON(http.StatusBadRequest, map[string]string{"message": err.Error()})
+		validationErrors := err.(validator.ValidationErrors)
+		errorMessages := make(map[string]string)
+		for _, fieldError := range validationErrors {
+			errorMessages[fieldError.Field()] = "This field is required"
+		}
+		return ctx.JSON(http.StatusBadRequest, map[string]interface{}{
+			"message": "Validation failed",
+			"errors":  errorMessages,
+		})
 	}
 
 	item := &models.Inventory{
@@ -47,7 +64,6 @@ func (c *InventoryController) CreateItemHandler(ctx echo.Context) error {
 		Discount: req.Discount,
 		Vendor:   req.Vendor,
 	}
-	log.Println("controller item-------->", item.Name)
 
 	createdItem, err := c.InventoryManager.CreateItem(ctx.Request().Context(), flag, item)
 	if err != nil {
@@ -55,7 +71,7 @@ func (c *InventoryController) CreateItemHandler(ctx echo.Context) error {
 	}
 
 	response := responses.InventoryResponse{
-		// ID:       createdItem.ID,
+		ID:       createdItem.ID,
 		Name:     createdItem.Name,
 		Price:    createdItem.Price,
 		Currency: createdItem.Currency,
@@ -65,7 +81,6 @@ func (c *InventoryController) CreateItemHandler(ctx echo.Context) error {
 
 	return ctx.JSON(http.StatusCreated, response)
 }
-
 
 func (c *InventoryController) GetItemsHandler(ctx echo.Context) error {
 	flagStr := ctx.QueryParam("flag")
@@ -88,7 +103,7 @@ func (c *InventoryController) GetItemsHandler(ctx echo.Context) error {
 	var itemResponses []responses.InventoryResponse
 	for _, item := range items {
 		itemResponses = append(itemResponses, responses.InventoryResponse{
-			// ID:       item.ID,
+			ID:       item.ID,
 			Name:     item.Name,
 			Price:    item.Price,
 			Currency: item.Currency,
@@ -102,6 +117,7 @@ func (c *InventoryController) GetItemsHandler(ctx echo.Context) error {
 		"totalRecords": totalCount,
 	})
 }
+
 
 func (c *InventoryController) GetItemByIDHandler(ctx echo.Context) error {
 	flagStr := ctx.QueryParam("flag")
@@ -118,7 +134,7 @@ func (c *InventoryController) GetItemByIDHandler(ctx echo.Context) error {
 	}
 
 	return ctx.JSON(http.StatusOK, responses.InventoryResponse{
-		// ID:       item.ID,
+		ID:       item.ID,
 		Name:     item.Name,
 		Price:    item.Price,
 		Currency: item.Currency,
@@ -130,10 +146,27 @@ func (c *InventoryController) GetItemByIDHandler(ctx echo.Context) error {
 func (c *InventoryController) UpdateItemHandler(ctx echo.Context) error {
 	flagStr := ctx.QueryParam("flag")
 	flag, err := parseFlag(flagStr)
+	if err != nil {
+		return ctx.JSON(http.StatusBadRequest, map[string]string{"message": "Invalid flag value"})
+	}
+
 	id := ctx.Param("id")
+
 	var req requests.InventoryRequest
 	if err := ctx.Bind(&req); err != nil {
-		return ctx.JSON(http.StatusBadRequest, map[string]string{"message": "Invalid request"})
+		return ctx.JSON(http.StatusBadRequest, map[string]string{"message": "Invalid request format"})
+	}
+
+	if err := c.Validate.Struct(req); err != nil {
+		validationErrors := err.(validator.ValidationErrors)
+		errorMessages := make(map[string]string)
+		for _, fieldError := range validationErrors {
+			errorMessages[fieldError.Field()] = "This field is required"
+		}
+		return ctx.JSON(http.StatusBadRequest, map[string]interface{}{
+			"message": "Validation failed",
+			"errors":  errorMessages,
+		})
 	}
 
 	item := &models.Inventory{
@@ -150,7 +183,7 @@ func (c *InventoryController) UpdateItemHandler(ctx echo.Context) error {
 	}
 
 	return ctx.JSON(http.StatusOK, responses.InventoryResponse{
-		// ID:       updatedItem.ID,
+		ID:       updatedItem.ID,
 		Name:     updatedItem.Name,
 		Price:    updatedItem.Price,
 		Currency: updatedItem.Currency,
@@ -158,6 +191,8 @@ func (c *InventoryController) UpdateItemHandler(ctx echo.Context) error {
 		Vendor:   updatedItem.Vendor,
 	})
 }
+
+
 func (c *InventoryController) DeleteItemHandler(ctx echo.Context) error {
 	flagStr := ctx.QueryParam("flag")
 	flag, err := parseFlag(flagStr)
@@ -174,5 +209,3 @@ func (c *InventoryController) DeleteItemHandler(ctx echo.Context) error {
 
 	return ctx.JSON(http.StatusOK, map[string]string{"message": "Item deleted successfully"})
 }
-
-

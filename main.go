@@ -25,9 +25,13 @@ func main() {
 	}
 
 	routes.RegisterInventoryRoutes(e, inventoryController)
+	var mongo config.MongoConfig
+	port := mongo.MongoPort
+	if port == "" {
+		port = ":8080"
+	}
 
-	log.Println("Starting server on port 8080...")
-	if err := e.Start(":8080"); err != nil {
+	if err := e.Start(port); err != nil {
 		log.Fatalf("Error starting server: %v", err)
 	}
 }

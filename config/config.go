@@ -4,11 +4,13 @@ import (
 	"context"
 	"fmt"
 	"log"
+
 	"main/models"
 
 	"os"
 	"time"
 
+	"github.com/caarlos0/env/v6"
 	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -16,6 +18,13 @@ import (
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
+
+type MongoConfig struct {
+	MONGO_URI         string `env:"MONGO_URL" envDefault:"mongodb://localhost:27017"`
+	MongoDBCollection string `env:"MONGODB_COLLECTION" envDefault:"inventories"`
+	MongoDBName       string `env:"MONGODB_DB_NAME" envDefault:"inventoryDB"`
+	MongoPort string `env:"MONGO_PORT" envDefault:"8080"`
+}
 
 var MongoClient *mongo.Client
 var InventoryCollection *mongo.Collection
@@ -27,16 +36,23 @@ func LoadEnv() {
 }
 
 func InitMongoDB() {
+	var config MongoConfig
+	if err := env.Parse(&config); err != nil {
+		log.Fatalf("Failed to parse environment variables: %v", err)
+	}
+
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
 	var err error
-	MongoClient, err = mongo.Connect(ctx, options.Client().ApplyURI("mongodb://localhost:27017"))
+	MongoClient, err = mongo.Connect(ctx, options.Client().ApplyURI(config.MONGO_URI))
 	if err != nil {
 		log.Fatalf("MongoDB connection failed: %v", err)
 	}
 
-	InventoryCollection = MongoClient.Database("inventoryDB").Collection("inventories")
+	InventoryCollection = MongoClient.Database(config.MongoDBName).Collection(config.MongoDBCollection)
+
+	log.Println("MongoDB initialized successfully")
 }
 
 var PG *gorm.DB
@@ -63,7 +79,7 @@ func PostgresConnect() {
 
 	PG = PGDB
 
-	err = PG.AutoMigrate(&models.Inventory{}) // Add all the models you want to migrate here
+	err = PG.AutoMigrate(&models.Inventory{}) 
 	if err != nil {
 		log.Fatal("Error migrating models:", err)
 	}

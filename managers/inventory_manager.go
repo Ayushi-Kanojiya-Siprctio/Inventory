@@ -7,7 +7,6 @@ import (
 	"log"
 	"main/models"
 	service "main/services"
-
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
@@ -36,8 +35,7 @@ func (m *InventoryManager) GetItems(ctx context.Context, flag bool) ([]*models.I
 }
 
 func (m *InventoryManager) CreateItem(ctx context.Context, flag bool, item *models.Inventory) (*models.Inventory, error) {
-	log.Println("flag--------->", flag)
-	log.Println("manager item-------->", item.Name)
+	
 
 	switch flag {
 	case true:

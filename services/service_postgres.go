@@ -35,14 +35,11 @@ func CreateTableIfNotExists(db *gorm.DB) error {
 }
 
 func CreateItemPostgres(ctx context.Context, item *models.Inventory) (*models.Inventory, error) {
-	log.Println("Postgres create service--------->")
-	log.Println("PG-------->", config.PG)
-
+	
 	if config.PG == nil {
 		log.Println("Error: PostgreSQL database connection is not initialized.")
 		return nil, errors.New("PostgreSQL database connection is not initialized")
 	}
-	log.Println("item-------->", item.Name)
 
 	query := `INSERT INTO inventories (product_name, price, currency, discount, vendor)
 				VALUES (?, ?, ?, ?, ?)

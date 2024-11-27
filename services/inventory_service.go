@@ -13,8 +13,6 @@ import (
 )
 
 func CreateItem(ctx context.Context, item *models.Inventory) (*models.Inventory, error) {
-	log.Println("mongo create service--------->")
-
 	// item.SetMongoDB()
 	// item.GenerateUUID()
 
